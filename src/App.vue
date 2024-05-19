@@ -136,25 +136,20 @@ export default {
       };
     },
     setData(event, columnName, taskId) {
-      console.log({ event, columnId });
       const target = this.scene.children.filter((p) => p.id === columnId);
 
       return;
     },
 
     overwriteTask(taskId, { title, description }) {
-      // Loop through the data to find the task with the given taskId
       for (let i = 0; i < this.scene.children.length; i++) {
         const container = this.scene.children[i];
 
         for (let j = 0; j < container.children.length; j++) {
           const task = container.children[j];
-          console.log({ task });
           if (task.id === taskId) {
-            // Update the title and description of the task
             task.title = title;
             task.description = description;
-            // Since taskId is unique, we can break out of the loop
             window.localStorage.setItem(
               "to do listTasks",
               JSON.stringify(this.scene)
