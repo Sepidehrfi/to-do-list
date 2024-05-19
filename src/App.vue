@@ -2,6 +2,11 @@
   <div>
     <button style="margin-right: 10px" @click="addColumn">add column</button>
     <button @click="addTask">add task</button>
+    <input
+      style="margin-left: 10px; padding: 10px; border-radius: 5px"
+      v-model="search"
+      placeholder="search"
+    />
     <Container
       orientation="horizontal"
       drag-handle-selector=".column-drag-handle"
@@ -34,8 +39,16 @@
             class="drop-container"
             :style="scene.children.length > 2 ? 'width:350px' : ''"
           >
-            <Draggable v-for="card in column.children" :key="card.id" v-show="card.id">
+            <Draggable
+              v-for="card in column.children"
+              :key="card.id"
+              v-show="card.id"
+            >
               <card
+                v-show="
+                  card.description.includes(search) ||
+                  card.title.includes(search)
+                "
                 @deleteTask="onDeleteTask(column.id, card.id)"
                 :title="card.title"
                 :description="card.description"
@@ -60,7 +73,8 @@ export default {
   data() {
     return {
       scene:
-        JSON.parse(window?.localStorage?.getItem("trelloTasks")) || defaultData,
+        JSON.parse(window?.localStorage?.getItem("to do listTasks")) ||
+        defaultData,
       upperDropPlaceholderOptions: {
         className: "cards-drop-preview",
         animationDuration: "150",
@@ -71,7 +85,15 @@ export default {
         animationDuration: "150",
         showOnTop: true,
       },
+      search: "",
     };
+  },
+  mounted() {
+    const channel = new BroadcastChannel("message-ch");
+
+    channel.addEventListener("message", () => {
+      this.scene = JSON.parse(window?.localStorage?.getItem("to do listTasks"));
+    });
   },
   methods: {
     applyDrag(arr, dragResult) {
@@ -101,7 +123,7 @@ export default {
         newColumn.children = this.applyDrag(newColumn.children, dropResult);
         scene.children.splice(columnIndex, 1, newColumn);
 
-        window.localStorage.setItem("trelloTasks", JSON.stringify(scene));
+        window.localStorage.setItem("to do listTasks", JSON.stringify(scene));
         this.scene = scene;
       }
     },
@@ -134,7 +156,7 @@ export default {
             task.description = description;
             // Since taskId is unique, we can break out of the loop
             window.localStorage.setItem(
-              "trelloTasks",
+              "to do listTasks",
               JSON.stringify(this.scene)
             );
 
@@ -143,28 +165,36 @@ export default {
         }
       }
     },
+    setInLocal(scene) {
+      window.localStorage.setItem("to do listTasks", JSON.stringify(scene));
+      const channel = new BroadcastChannel("message-ch");
+      channel.postMessage("");
+    },
     addColumn() {
       this.scene.children.push({ ...defaultColumn, id: crypto.randomUUID() });
-      window.localStorage.setItem("trelloTasks", JSON.stringify(this.scene));
+      this.setInLocal(this.scene);
     },
     addTask() {
       this.scene.children[0].children.push({
         ...defaultTask,
         id: crypto.randomUUID(),
       });
-      window.localStorage.setItem("trelloTasks", JSON.stringify(this.scene));
+      this.setInLocal(this.scene);
     },
     deleteColumn(index) {
       this.scene.children.splice(index, 1);
-      window.localStorage.setItem("trelloTasks", JSON.stringify(this.scene));
+      this.setInLocal(this.scene);
     },
 
     onDeleteTask(columnId, taskId) {
-      const selectedCol =  this.scene.children[
+      const selectedCol =
+        this.scene.children[
           this.scene.children.findIndex((col) => col.id === columnId)
-        ]
-			selectedCol.children[selectedCol.children.findIndex((task) => task.id === taskId)].id = undefined
-			window.localStorage.setItem("trelloTasks", JSON.stringify(this.scene));
+        ];
+      selectedCol.children[
+        selectedCol.children.findIndex((task) => task.id === taskId)
+      ].id = undefined;
+      this.setInLocal(this.scene);
     },
   },
 };

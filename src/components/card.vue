@@ -1,14 +1,14 @@
 <template>
   <div class="card-container">
     <div class="card">
+		<input v-model="data.title" class="title" />
+		<textarea v-model="data.description" class="description" />
       <button
         style="font-size: smaller; background-color: rgba(254, 98, 77, 0.437)"
         @click="emit('deleteTask')"
       >
         Delete Task &#x2613;
       </button>
-      <input v-model="data.title" class="title" />
-      <textarea v-model="data.description" class="description" />
     </div>
   </div>
 </template>
